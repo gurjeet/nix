@@ -11,6 +11,12 @@ man-pages := $(foreach n, \
   nix.conf.5 nix-daemon.8, \
   $(d)/$(n))
 
+manpages_in_dir=doc/manual/src/command-ref/new-cli
+nix3_manpages_src=$(foreach x, \
+	$(wildcard $(manpages_in_dir)/*.md),\
+	$(if $(findstring SUMMARY,$x),,$x))
+man-pages+=$(patsubst $(manpages_in_dir)/%.md,$(d)/new-cli/%.1,$(nix3_manpages_src))
+
 clean-files += $(d)/*.1 $(d)/*.5 $(d)/*.8
 
 # Provide a dummy environment for nix, so that it will not access files outside the macOS sandbox.
@@ -23,6 +29,7 @@ dummy-env = env -i \
 nix-eval = $(dummy-env) $(bindir)/nix eval --experimental-features nix-command -I nix/corepkgs=corepkgs --store dummy:// --impure --raw
 
 $(d)/%.1: $(d)/src/command-ref/%.md
+	@mkdir -p "$$(dirname $@)"
 	@printf "Title: %s\n\n" "$$(basename $@ .1)" > $^.tmp
 	@cat $^ >> $^.tmp
 	$(trace-gen) lowdown -sT man -M section=1 $^.tmp -o $@
@@ -73,16 +80,6 @@ $(d)/builtins.json: $(bindir)/nix
 
 # Generate the HTML manual.
 install: $(docdir)/manual/index.html
-
-# Generate 'nix' manpages.
-install: $(d)/src/command-ref/new-cli
-	$(trace-gen) for i in doc/manual/src/command-ref/new-cli/*.md; do \
-	  name=$$(basename $$i .md); \
-	  if [[ $$name = SUMMARY ]]; then continue; fi; \
-	  printf "Title: %s\n\n" "$$name" > $$i.tmp; \
-	  cat $$i >> $$i.tmp; \
-	  lowdown -sT man -M section=1 $$i.tmp -o $(mandir)/man1/$$name.1; \
-	done
 
 $(docdir)/manual/index.html: $(MANUAL_SRCS) $(d)/book.toml $(d)/custom.css $(d)/src/SUMMARY.md $(d)/src/command-ref/new-cli $(d)/src/command-ref/conf-file.md $(d)/src/expressions/builtins.md
 	$(trace-gen) RUST_LOG=warn mdbook build doc/manual -d $(docdir)/manual
