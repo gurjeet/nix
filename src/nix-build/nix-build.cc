@@ -439,9 +439,13 @@ static void _main(int argc, char * * argv)
         for (auto & i : env)
             envStrs.push_back(i.first + "=" + i.second);
 
-        auto args = interactive
-            ? Strings{"bash", "--rcfile", rcfile}
-            : Strings{"bash", rcfile};
+        Strings args;
+        args.push_back("bash");
+        if (interactive)
+            args.push_back("--rcfile");
+        args.push_back(rcfile);
+        if (pure)
+            args.push_back("--noprofile");
 
         auto envPtrs = stringsToCharPtrs(envStrs);
 

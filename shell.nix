@@ -17,7 +17,7 @@ with import ./release-common.nix { inherit pkgs; };
 
   shellHook =
     ''
-      export prefix=$(pwd)/inst
+      prefix=$(pwd)/inst
       configureFlags+=" --prefix=$prefix"
       PKG_CONFIG_PATH=$prefix/lib/pkgconfig:$PKG_CONFIG_PATH
       PATH=$prefix/bin:$PATH
