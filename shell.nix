@@ -4,10 +4,12 @@ with import (builtins.fetchTarball https://github.com/NixOS/nixpkgs-channels/arc
 
 with import ./release-common.nix { inherit pkgs; };
 
-(if useClang then clangStdenv else stdenv).mkDerivation {
+(if useClang then clangStdenv else stdenv).mkDerivation rec {
   name = "nix";
 
-  buildInputs = buildDeps ++ propagatedDeps ++ tarballDeps ++ perlDeps;
+  buildInputs = buildDeps ++ propagatedDeps ++ tarballDeps ++ perlDeps ++ [ coreutils ];
+
+  bins = builtins.concatStringsSep ":" (map (x: x + "/bin") buildInputs);
 
   inherit configureFlags;
 
@@ -21,5 +23,9 @@ with import ./release-common.nix { inherit pkgs; };
       configureFlags+=" --prefix=$prefix"
       PKG_CONFIG_PATH=$prefix/lib/pkgconfig:$PKG_CONFIG_PATH
       PATH=$prefix/bin:$PATH
+
+      gurjeet=${bins}
+      echo HELLO
+      echo $@
     '';
 }

@@ -97,7 +97,7 @@ static void _main(int argc, char * * argv)
     std::string outLink = "./result";
 
     // List of environment variables kept for --pure
-    std::set<string> keepVars{"HOME", "USER", "LOGNAME", "DISPLAY", "PATH", "TERM", "IN_NIX_SHELL", "TZ", "PAGER", "NIX_BUILD_SHELL", "SHLVL"};
+    std::set<string> keepVars{"HOME", "USER", "LOGNAME", "DISPLAY", "TERM", "IN_NIX_SHELL", "TZ", "PAGER", "NIX_BUILD_SHELL", "SHLVL"};
 
     Strings args;
     for (int i = 1; i < argc; ++i)
@@ -412,7 +412,7 @@ static void _main(int argc, char * * argv)
         auto rcfile = (Path) tmpDir + "/rc";
         writeFile(rcfile, fmt(
                 (keepTmp ? "" : "rm -rf '%1%'; "s) +
-                "[ -n \"$PS1\" ] && [ -e ~/.bashrc ] && source ~/.bashrc; "
+                (pure ? "" : "[ -n \"$PS1\" ] && [ -e ~/.bashrc ] && source ~/.bashrc; ") +
                 "%2%"
                 "dontAddDisableDepTrack=1; "
                 "[ -e $stdenv/setup ] && source $stdenv/setup; "
@@ -439,13 +439,20 @@ static void _main(int argc, char * * argv)
         for (auto & i : env)
             envStrs.push_back(i.first + "=" + i.second);
 
-        Strings args;
-        args.push_back("bash");
+        Strings args = {"bash"};
         if (interactive)
             args.push_back("--rcfile");
         args.push_back(rcfile);
         if (pure)
-            args.push_back("--noprofile");
+        {
+            //args.push_back("--login");
+            //args.push_back("--norc");
+            //args.push_back("--noprofile");
+
+            // Leverage Posix behaviour
+            args.push_back("--posix");
+            envStrs.push_back("ENV=" + rcfile);
+        }
 
         auto envPtrs = stringsToCharPtrs(envStrs);
 
